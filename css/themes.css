@@ -1,0 +1,63 @@
+/* themes.css
+   5 套替代主題 — salmon 是 :root 預設,這裡放其他 5 套的覆寫
+   每套只改顏色變數,shadow / 字型 / radius 跟 base.css 共用。 */
+
+/* === Theme: 深森林綠 (forest) — 沉靜・雅致 === */
+body[data-theme="forest"]{
+  --bg: #f3f4ee; --bg-2: #e8ebe1;
+  --ink: #1a201a; --ink-soft: #4d5a4a; --ink-faint: #93998c;
+  --line: #d8ddcd; --line-strong: #b8c0a8;
+  --card: #fbfcf8;
+  --accent: #4a6b3a; --accent-soft: #d8e4cb;
+  --pin: #6b8855; --green: #4a6b3a; --amber: #a87f1c; --blue: #2c5f7c;
+  --bg-tint-1: rgba(74,107,58,.05);
+  --bg-tint-2: rgba(20,30,20,.03);
+}
+
+/* === Theme: 藍色夜雨 (rain) — 冷靜・專注 === */
+body[data-theme="rain"]{
+  --bg: #eef1f5; --bg-2: #e4e9ef;
+  --ink: #1a1f2a; --ink-soft: #4a5566; --ink-faint: #8b94a3;
+  --line: #d0d7e0; --line-strong: #a8b3c2;
+  --card: #f7f9fc;
+  --accent: #2c5f7c; --accent-soft: #cfe1ec;
+  --pin: #4a7a96; --green: #4a6b3a; --amber: #a87f1c; --blue: #2c5f7c;
+  --bg-tint-1: rgba(44,95,124,.06);
+  --bg-tint-2: rgba(20,30,40,.03);
+}
+
+/* === Theme: 薰衣草紫 (lavender) — 溫柔・創意 === */
+body[data-theme="lavender"]{
+  --bg: #f4f1f6; --bg-2: #ebe6ef;
+  --ink: #221a26; --ink-soft: #564a5e; --ink-faint: #9a93a3;
+  --line: #ddd4e3; --line-strong: #beb1c7;
+  --card: #fbf9fc;
+  --accent: #7a4f9a; --accent-soft: #e4d4ed;
+  --pin: #8e6db0; --green: #4a6b3a; --amber: #a87f1c; --blue: #2c5f7c;
+  --bg-tint-1: rgba(122,79,154,.05);
+  --bg-tint-2: rgba(30,20,35,.03);
+}
+
+/* === Theme: 朝陽黃 (sunlight) — 溫暖・明亮 === */
+body[data-theme="sunlight"]{
+  --bg: #faf6ec; --bg-2: #f4eed8;
+  --ink: #2a2418; --ink-soft: #6b5e3e; --ink-faint: #a8a085;
+  --line: #ebe3c9; --line-strong: #d3c89e;
+  --card: #fffdf6;
+  --accent: #b8860b; --accent-soft: #f5e8b8;
+  --pin: #d49b1c; --green: #6b8855; --amber: #b8860b; --blue: #2c5f7c;
+  --bg-tint-1: rgba(184,134,11,.06);
+  --bg-tint-2: rgba(40,30,20,.03);
+}
+
+/* === Theme: 咽茶桃 (peach) — 柔和・女性化 === */
+body[data-theme="peach"]{
+  --bg: #f9f1ee; --bg-2: #f0e3dd;
+  --ink: #2a1f1c; --ink-soft: #6b554f; --ink-faint: #a89a94;
+  --line: #ead7d0; --line-strong: #d4b8ad;
+  --card: #fdf7f5;
+  --accent: #c47766; --accent-soft: #f3dcd2;
+  --pin: #d6957f; --green: #4a6b3a; --amber: #a87f1c; --blue: #2c5f7c;
+  --bg-tint-1: rgba(196,119,102,.05);
+  --bg-tint-2: rgba(40,20,20,.03);
+}

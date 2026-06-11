@@ -1,0 +1,158 @@
+/* archive.css
+   封存區:右側手把、滑出面板、tabs、卡片、還原/編輯按鈕
+   row-level 快速封存按鈕(在 panel 內的 link row 上)也放這裡。 */
+
+.arc-handle{
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 80px;
+  background: var(--card); border: 1px solid var(--line);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 60;
+  color: var(--ink-faint);
+  transition: all .15s;
+  box-shadow: var(--shadow-sm);
+}
+.arc-handle:hover{
+  width: 26px; color: var(--accent);
+  border-color: var(--accent-soft);
+}
+.arc-handle .vtxt{
+  writing-mode: vertical-rl; text-orientation: mixed;
+  font-size: 10px; font-family: var(--mono);
+  letter-spacing: .15em; text-transform: uppercase;
+}
+body.archive-pinned .arc-handle{display:none;}
+
+.arc-panel{
+  position: fixed; right: -480px; top: 0; bottom: 0;
+  width: min(460px, 92vw);
+  background: var(--card); border-left: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-xl);
+  z-index: 70;
+  display: flex; flex-direction: column;
+  transition: right .25s ease, width .25s ease;
+}
+.arc-panel.open{right: 0;}
+body.archive-pinned .arc-panel{right: 0;}
+/* 在 archive-pinned 模式且手機螢幕,不擠 main 而是當作 overlay */
+@media (max-width: 900px){
+  body.archive-pinned main{ padding-right: 16px; }
+  .arc-panel{ box-shadow: var(--shadow-xl); }
+}
+
+.arc-head{
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px;
+}
+.arc-head h3{
+  font-family: var(--serif); font-weight: 600; font-size: 16px;
+}
+.arc-head .arc-meta{
+  font-size: 11px; color: var(--ink-faint); margin-left: 4px;
+}
+.arc-head .arc-actions{margin-left:auto; display:flex; gap:4px;}
+
+.arc-tabs{
+  display: flex; gap: 2px; overflow-x: auto;
+  padding: 8px 14px 0; border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+}
+.arc-tabs::-webkit-scrollbar{display:none;}
+.arc-tab{
+  padding: 6px 12px 8px;
+  font-size: 12.5px; color: var(--ink-soft);
+  border: none; background: transparent;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: all .12s;
+  position: relative;
+}
+.arc-tab:hover{color: var(--ink);}
+.arc-tab.active{color: var(--accent); border-bottom-color: var(--accent); font-weight: 500;}
+.arc-tab.all{color: var(--ink-faint); font-style: italic;}
+.arc-tab.all.active{color: var(--ink);}
+body.edit-mode .arc-tab .arc-tab-x{
+  margin-left: 6px; color: var(--ink-faint); font-size: 10px;
+  cursor: pointer;
+}
+body.edit-mode .arc-tab .arc-tab-x:hover{color: var(--accent);}
+.arc-tab-add{
+  padding: 6px 10px; font-size: 14px; color: var(--ink-faint);
+  border: 1px dashed var(--line); border-radius: 4px;
+  background: transparent; cursor: pointer;
+  align-self: center; margin-left: 4px;
+  display: none;
+}
+body.edit-mode .arc-tab-add{display: inline-block;}
+
+.arc-body{
+  flex: 1; overflow-y: auto;
+  padding: 12px 16px 24px;
+}
+.arc-section{ margin-bottom: 18px; }
+.arc-section-head{
+  font-family: var(--serif); font-style: italic; font-size: 12.5px;
+  color: var(--ink-faint); margin-bottom: 6px;
+  padding: 4px 2px;
+  border-bottom: 1px dashed var(--line);
+}
+.arc-card{
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 8px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.arc-card:hover{ border-color: var(--ink-faint); background: var(--card); }
+.arc-card.is-open{ border-color: var(--accent); background: var(--card); }
+body.edit-mode .arc-card{ border-style: dashed; cursor: grab; }
+body.edit-mode .arc-card:hover{ border-style: solid; }
+.arc-card-head{
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 500;
+  margin-bottom: 4px;
+}
+.arc-card-icon{
+  width: 18px; height: 18px; border-radius: 4px;
+  background: var(--card); border: 1px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; flex-shrink: 0;
+}
+.arc-card-actions{margin-left:auto; display:flex; gap: 2px;}
+.arc-restore, .arc-edit-x{
+  width: 22px; height: 22px; border-radius: 4px;
+  border: none; background: transparent; color: var(--ink-faint);
+  cursor: pointer; font-size: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.arc-restore:hover{background: var(--accent-soft); color: var(--accent);}
+.arc-edit-x:hover{background: var(--bg); color: var(--ink);}
+.arc-link{
+  display:flex; align-items:center; gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px; color: var(--ink-soft);
+  border-radius: 4px;
+}
+.arc-link:hover{background: var(--card);}
+.arc-link a{color: var(--ink); flex: 1; min-width:0; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;}
+.arc-empty{
+  padding: 30px 20px; text-align: center;
+  color: var(--ink-faint); font-size: 12.5px;
+  font-style: italic; font-family: var(--serif);
+}
+
+/* row-level archive button(在 panel 的 link row 上) */
+.archive-row-btn{
+  width: 22px; height: 22px; border-radius: 4px;
+  border: none; background: transparent; color: var(--ink-faint);
+  cursor: pointer; font-size: 11px;
+  display: none;
+  align-items: center; justify-content: center;
+}
+.archive-row-btn:hover{background: var(--accent-soft); color: var(--accent);}
+body.edit-mode .archive-row-btn{display: inline-flex;}

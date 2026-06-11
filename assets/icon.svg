@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- znue_home PWA icon
+       橘色背景(主題色 #c2410c)+ 白色 italic 'z' 字。
+       Maskable safe zone:中央 80%(40-460px)。z 字位於中央。
+       使用者可換成自己設計的 PNG/SVG,改 manifest.json 的 icons 欄位即可。 -->
+  <rect width="512" height="512" fill="#c2410c"/>
+  <text x="256" y="360" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="280" font-weight="600"
+        fill="#ffffff" font-style="italic">z</text>
+</svg>

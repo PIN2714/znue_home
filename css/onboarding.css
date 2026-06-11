@@ -1,0 +1,322 @@
+/* onboarding.css
+   首次開啟的 overlay + 設定 modal 樣式
+   onboarding 是全螢幕半透明遮罩,settings modal 跟 components.css 的 .modal 共享基本樣式 */
+
+.onboarding{
+  position: fixed; inset: 0;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+  z-index: 400;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.onboarding.show{ display: flex; }
+
+.onb-card{
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-xl);
+  padding: 36px 40px 28px;
+  width: 100%; max-width: 540px;
+  position: relative;
+  animation: fadeIn .25s ease;
+}
+
+.onb-brand{
+  font-family: var(--serif); font-size: 14px;
+  color: var(--ink-faint);
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 8px;
+  letter-spacing: -.005em;
+}
+.onb-brand em{ font-style: italic; color: var(--accent); font-weight: 500; }
+.onb-brand .dot{
+  display:inline-block; width:5px; height:5px; border-radius:50%;
+  background: var(--accent); margin: 0 8px 2px; vertical-align: middle;
+}
+
+.onb-title{
+  font-family: var(--serif); font-weight: 600;
+  font-size: 26px; letter-spacing: -.015em;
+  color: var(--ink); margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.onb-banner{
+  font-family: var(--serif); font-style: italic;
+  font-size: 13px; color: var(--ink-soft);
+  line-height: 1.5; margin-bottom: 22px;
+  min-height: 20px;
+}
+
+.onb-actions{
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 12px;
+}
+
+.onb-btn{
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 14px;
+  align-items: center;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.onb-btn:hover{
+  border-color: var(--ink);
+  background: var(--bg-2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.onb-btn.primary{
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--card) 100%);
+}
+.onb-btn.primary:hover{
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--accent-soft) 100%);
+}
+.onb-btn .icon{
+  grid-row: 1 / 3;
+  font-size: 22px;
+  text-align: center;
+  align-self: center;
+}
+.onb-btn .label{
+  font-family: var(--serif); font-weight: 600; font-size: 15px;
+  color: var(--ink); letter-spacing: -.005em;
+}
+.onb-btn .hint{
+  font-family: var(--mono); font-size: 10px;
+  color: var(--ink-faint); letter-spacing: .04em;
+  margin-top: 2px;
+}
+.onb-btn.slim{
+  padding: 11px 16px;
+}
+.onb-btn.slim .label{ font-size: 13px; font-family: var(--sans); font-weight: 500; }
+
+.onb-reauth{
+  display: none;
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 11px 16px;
+  border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  margin-top: 4px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.onb-reauth:hover{ background: var(--ink); }
+.onboarding[data-reason="permission"] .onb-reauth{ display: block; }
+.onboarding[data-reason="permission"] .onb-actions{ display: none; }
+.onboarding[data-reason="permission"] .onb-divider,
+.onboarding[data-reason="permission"] .onb-btn.slim,
+.onboarding[data-reason="permission"] #onbBtnWebdav,
+.onboarding[data-reason="permission"] #onbWebdavForm{ display: none; }
+
+.onb-divider{
+  text-align: center;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--ink-faint); letter-spacing: .15em;
+  text-transform: uppercase;
+  margin: 18px 0 12px;
+  position: relative;
+}
+.onb-divider::before, .onb-divider::after{
+  content:''; position: absolute; top: 50%;
+  width: calc(50% - 60px); height: 1px;
+  background: var(--line);
+}
+.onb-divider::before{ left: 0; }
+.onb-divider::after{ right: 0; }
+
+.onb-foot{
+  font-family: var(--mono); font-size: 10px;
+  color: var(--ink-faint); letter-spacing: .03em;
+  line-height: 1.7;
+  margin-top: 24px; padding-top: 16px;
+  border-top: 1px dashed var(--line);
+}
+.onb-foot code{
+  font-family: var(--mono);
+  background: var(--bg-2);
+  padding: 1px 5px; border-radius: 3px;
+  color: var(--accent);
+}
+
+/* ===== Settings modal — 跟 .modal 共用大部分樣式,只加些區段內樣式 ===== */
+.settings-section{
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.settings-section:last-child{ border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+
+.settings-h3{
+  font-family: var(--serif); font-weight: 600;
+  font-size: 13px; color: var(--ink);
+  margin-bottom: 10px;
+  letter-spacing: -.005em;
+}
+
+.settings-row{
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 0;
+}
+.settings-row + .settings-row{ border-top: 1px dashed var(--line); }
+.settings-row-info{
+  flex: 1; min-width: 0;
+}
+.settings-row-label{
+  font-family: var(--mono); font-size: 10px;
+  color: var(--ink-faint); letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.settings-row-val{
+  font-size: 13px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--mono);
+}
+.settings-row-actions{
+  display: flex; gap: 6px; flex-shrink: 0;
+}
+.settings-btn{
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 5px 11px; border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.settings-btn:hover{ border-color: var(--ink); background: var(--bg-2); }
+.settings-btn.ghost{ color: var(--ink-faint); }
+.settings-btn.ghost:hover{ color: var(--accent); border-color: var(--accent); }
+
+.settings-hint{
+  font-family: var(--serif); font-style: italic;
+  font-size: 11.5px; color: var(--ink-soft);
+  line-height: 1.5; margin-top: 8px;
+}
+
+/* toggle row 反過來:主文字大、hint 小 */
+.settings-row-toggle .settings-row-label{
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.settings-row-toggle .settings-row-val{
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  white-space: normal;
+}
+
+#settingsModal .modal-body{ padding-bottom: 24px; }
+#settingsModal #settingsHealthUrl{ margin-top: 4px; }
+
+/* 跳過按鈕 — 永遠顯示。預設(不支援 FSA 時)用主按鈕樣式;.subtle(支援 FSA 時)用次要樣式 */
+.onb-skip{
+  display: none;
+  width: 100%;
+  background: transparent; color: var(--ink-soft);
+  border: 1px solid var(--line-strong); border-radius: 6px;
+  padding: 10px 14px; margin-top: 14px;
+  font-family: var(--serif); font-style: italic; font-size: 12.5px;
+  cursor: pointer; transition: all .15s;
+  line-height: 1.4;
+}
+.onb-skip:hover{ border-color: var(--ink); color: var(--ink); background: var(--bg-2); }
+.onb-skip strong{ font-style: normal; font-weight: 600; color: var(--accent); }
+/* FSA 支援時的較淡樣式(不喧賓奪主) */
+.onb-skip.subtle{
+  background: transparent;
+  border-color: var(--line);
+  border-style: dashed;
+  color: var(--ink-faint);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  margin-top: 12px;
+}
+.onb-skip.subtle:hover{ color: var(--ink-soft); border-color: var(--ink-faint); border-style: solid; }
+.onb-skip.subtle strong{ color: var(--ink-soft); }
+
+/* WebDAV inline form — 收合在 NAS 按鈕下方 */
+.onb-webdav-form{
+  margin-top: 10px;
+  padding: 14px 16px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.onb-webdav-form .field-input{
+  width: 100%; box-sizing: border-box;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 7px 10px;
+  font-size: 12.5px; font-family: var(--mono);
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s;
+}
+.onb-webdav-form .field-input:focus{ border-color: var(--accent); }
+.onb-webdav-form .field-input::placeholder{ color: var(--ink-faint); }
+.onb-webdav-actions{
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 2px;
+}
+.onb-webdav-status{
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink-soft); margin: 0;
+  min-height: 16px; line-height: 1.5;
+}
+.onb-webdav-status.ok{ color: #22a55a; }
+.onb-webdav-status.err{ color: #e53e3e; }
+
+/* settings: WebDAV URL hint */
+.settings-row-val.webdav-url{
+  font-size: 11px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+/* Mobile */
+@media (max-width: 600px){
+  .onboarding{
+    /* 手機螢幕較小,改頂端對齊 + 縮邊距,避免 card 太高超出 viewport 看不到底部按鈕 */
+    align-items: flex-start;
+    padding: 16px;
+  }
+  .onb-card{ padding: 22px 18px 18px; max-width: 100%; }
+  .onb-title{ font-size: 20px; }
+  .onb-banner{ font-size: 12.5px; }
+  .onb-btn{ padding: 12px 14px; }
+  .onb-btn .label{ font-size: 14px; }
+  .onb-btn .hint{ font-size: 9.5px; }
+  .onb-foot{ font-size: 9.5px; }
+  .settings-row{ flex-direction: column; align-items: stretch; }
+  .settings-row-actions{ justify-content: flex-end; }
+}

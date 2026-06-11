@@ -1,0 +1,28 @@
+{
+  "name": "znue_home — 個人起始頁",
+  "short_name": "znue",
+  "description": "個人書籤起始頁,本機 JSON 持久化",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "/znue_home/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#f6f5f1",
+  "theme_color": "#c2410c",
+  "orientation": "any",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

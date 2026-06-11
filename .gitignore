@@ -1,0 +1,14 @@
+# 個人資料 — 不推上 GitHub
+znue_bookmarks.json
+znue_bookmarks_*.json
+
+# Claude Code 工具暫存
+.claude/
+
+# 開發草稿
+homepage_prototype_v6.html
+znue_home_taskbrief.md
+
+# OS
+.DS_Store
+Thumbs.db

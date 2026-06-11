@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>znue_home — 個人起始頁</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c2410c">
+<meta name="description" content="個人書籤起始頁,本機 JSON 持久化">
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<link rel="apple-touch-icon" href="assets/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="znue">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/archive.css">
+<link rel="stylesheet" href="css/onboarding.css">
+
+<script>
+  // 註冊 Service Worker(離線快取 + PWA 安裝)
+  // 用 https/localhost 才會啟用;file:// 直開時靜悄悄略過
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(err => {
+        console.warn('Service Worker 註冊失敗(可能是直接從檔案系統開啟,改用 http server 開即可):', err);
+      });
+    });
+  }
+</script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand" id="brand"><span class="znue-text">znue</span><span class="dot"></span><em id="brandText" data-edit-brand>home</em></div>
+  <label class="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="searchInput" type="text" placeholder="搜尋連結、分類、memo…" />
+    <kbd>/</kbd>
+  </label>
+  <div class="topbar-right">
+    <button class="icon-btn" id="themeBtn" title="主題">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
+    <button class="icon-btn" id="editMode" title="編輯模式 (E)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" title="設定">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+</div>
+
+<main>
+
+  <!-- Health bar -->
+  <div class="health-bar" id="healthBar">
+    <div class="health-tag">
+      <div class="health-tag-title">Today</div>
+      <div class="health-tag-sub">
+        <span class="dot"></span>
+        <span id="healthDate">—</span>
+      </div>
+    </div>
+    <div class="health-stats" id="healthStats"></div>
+  </div>
+
+  <div class="edit-banner">
+    <strong>✎ 編輯模式</strong>
+    <span style="color: var(--ink-soft); font-size: 12.5px;">點擊修改 · 雙擊改名 · 點 icon 換圖示 · 📦 快速封存</span>
+    <span class="spacer"></span>
+    <button class="ghost" id="toggleDense" title="自動填補空隙(Masonry)">✨ 自動填補</button>
+    <button class="ghost" id="exitEdit">完成</button>
+  </div>
+
+  <p class="hero-quote" id="heroQuote">
+    <span class="mark" id="heroMark" data-edit-hero-mark>// 2026 — your home, your map</span>
+    <span id="heroBody" data-edit-hero-body>一個給你 <em>常去的地方</em> 的安靜入口。按右上角 ✎ 編輯,☀ 換主題,右側 ▶ 看封存。</span>
+  </p>
+
+  <div id="sectionsWrap"></div>
+
+  <button class="add-section" onclick="addSection()">+ 新增區段</button>
+
+  <footer>
+    <span>znue_home · 本機 JSON 持久化 · <a href="README.md" target="_blank" style="color:inherit; text-decoration:underline; text-underline-offset:2px;">README</a></span>
+    <span id="lastUpdated"></span>
+  </footer>
+</main>
+
+<!-- 主題選單 -->
+<div class="theme-menu" id="themeMenu">
+  <div class="theme-row" data-theme="salmon">
+    <div class="theme-swatch" style="background:#f6f5f1;"><span style="position:absolute;right:0;top:0;width:50%;height:100%;background:#c2410c;"></span></div>
+    <div><div class="theme-name">深鮭魚橘</div><div class="theme-sub">經典・溫潤</div></div>
+  </div>
+  <div class="theme-row" data-theme="forest">
+    <div class="theme-swatch" style="background:#f3f4ee;"><span style="position:absolute;right:0;top:0;width:50%;height:100%;background:#4a6b3a;"></span></div>
+    <div><div class="theme-name">深森林綠</div><div class="theme-sub">沉靜・雅致</div></div>
+  </div>
+  <div class="theme-row" data-theme="rain">
+    <div class="theme-swatch" style="background:#eef1f5;"><span style="position:absolute;right:0;top:0;width:50%;height:100%;background:#2c5f7c;"></span></div>
+    <div><div class="theme-name">藍色夜雨</div><div class="theme-sub">冷靜・專注</div></div>
+  </div>
+  <div class="theme-row" data-theme="lavender">
+    <div class="theme-swatch" style="background:#f4f1f6;"><span style="position:absolute;right:0;top:0;width:50%;height:100%;background:#7a4f9a;"></span></div>
+    <div><div class="theme-name">薰衣草紫</div><div class="theme-sub">溫柔・創意</div></div>
+  </div>
+  <div class="theme-row" data-theme="sunlight">
+    <div class="theme-swatch" style="background:#faf6ec;"><span style="position:absolute;right:0;top:0;width:50%;height:100%;background:#b8860b;"></span></div>
+    <div><div class="theme-name">朝陽黃</div><div class="theme-sub">溫暖・明亮</div></div>
+  </div>
+  <div class="theme-row" data-theme="peach">
+    <div class="theme-swatch" style="background:#f9f1ee;"><span style="position:absolute;right:0;top:0;width:50%;height:100%;background:#c47766;"></span></div>
+    <div><div class="theme-name">咽茶桃</div><div class="theme-sub">柔和・浪漫</div></div>
+  </div>
+  <div class="theme-divider"></div>
+  <div class="theme-auto-row">
+    <span>跟隨時間自動</span>
+    <span class="switch" id="autoThemeSwitch"></span>
+  </div>
+  <div style="font-size:10.5px; color:var(--ink-faint); padding:0 10px 8px; line-height:1.5;">
+    晨陽 → 鮭魚 → 薰衣草 → 桃 → 森林 → 夜雨
+  </div>
+</div>
+
+<!-- 搜尋下拉 -->
+<div class="search-pop" id="searchPop">
+  <div class="search-chips" id="searchChips">
+    <button class="schip active" data-scope="all">全部</button>
+    <button class="schip" data-scope="title">標題</button>
+    <button class="schip" data-scope="memo">備註</button>
+    <button class="schip" data-scope="url">URL</button>
+    <button class="schip" data-scope="cat">分類</button>
+  </div>
+  <div class="search-results" id="searchResults"></div>
+</div>
+
+<!-- 封存:右側手把 -->
+<div class="arc-handle" id="arcHandle" title="封存區">
+  <span class="vtxt">封存</span>
+</div>
+
+<!-- 封存面板 -->
+<div class="arc-panel" id="arcPanel">
+  <div class="arc-head">
+    <h3>封存區</h3>
+    <span class="arc-meta" id="arcMeta">—</span>
+    <div class="arc-actions">
+      <button class="pin-btn" id="arcPinBtn" title="釘選">📌</button>
+      <button class="icon-btn" id="arcCloseBtn" title="關閉" style="width:28px;height:28px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="arc-tabs" id="arcTabs"></div>
+  <div class="arc-body" id="arcBody"></div>
+</div>
+
+<div class="panel" id="hoverPanel"></div>
+<div class="memo-pop" id="memoPop"></div>
+<div class="h-panel" id="healthPanel"></div>
+
+<div class="modal-backdrop" id="modalBackdrop"></div>
+<div class="modal" id="editModal">
+  <div class="modal-head">
+    <h2 id="modalTitle">編輯</h2>
+    <span class="modal-sub" id="modalSub">link</span>
+    <button class="close-btn" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body" id="modalBody"></div>
+  <div class="modal-foot">
+    <button class="danger-btn" id="modalDelete">刪除</button>
+    <button class="cancel-btn" onclick="closeModal()">取消</button>
+    <button class="save-btn" id="modalSave">儲存</button>
+  </div>
+</div>
+
+<div class="icon-picker" id="iconPicker">
+  <div class="picker-tabs">
+    <button class="picker-tab active" data-tab="emoji">emoji</button>
+    <button class="picker-tab" data-tab="symbol">符號</button>
+    <button class="picker-tab" data-tab="text">文字</button>
+    <button class="picker-tab" data-tab="upload">上傳</button>
+  </div>
+  <div class="picker-search" id="pickerSearch">
+    <input type="text" id="pickerSearchInput" placeholder="搜尋…" />
+  </div>
+  <div class="picker-content" id="pickerContent"></div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<!-- Onboarding overlay(沒連結 bookmarks.json 時顯示) -->
+<div class="onboarding" id="onboarding">
+  <div class="onb-card">
+    <div class="onb-brand"><em>znue</em><span class="dot"></span><span>home</span></div>
+    <h1 class="onb-title">把書籤存在你自己的硬碟上</h1>
+    <p class="onb-banner" id="onboardingBanner"></p>
+
+    <div class="onb-actions">
+      <button class="onb-btn primary" id="onbBtnOpen">
+        <span class="icon">📂</span>
+        <span class="label">選擇現有 bookmarks.json</span>
+        <span class="hint">已經有檔案 · 從硬碟載入</span>
+      </button>
+      <button class="onb-btn" id="onbBtnCreate">
+        <span class="icon">✨</span>
+        <span class="label">建立新的 bookmarks.json</span>
+        <span class="hint">從零開始 · 用範例資料起步</span>
+      </button>
+    </div>
+
+    <button class="onb-reauth" id="onbBtnReauth">↻ 重新授權</button>
+
+    <div class="onb-divider"><span>或使用雲端同步</span></div>
+
+    <button class="onb-btn" id="onbBtnGist">
+      <span class="icon">☁️</span>
+      <span class="label">GitHub Gist 同步</span>
+      <span class="hint">任何裝置一個連結 · 書籤存 GitHub · 免費</span>
+    </button>
+
+    <!-- GitHub Gist inline form -->
+    <div class="onb-webdav-form" id="onbGistForm" style="display:none;">
+      <input type="password" class="field-input" id="onbGistToken"
+             placeholder="Personal Access Token (gist scope)"
+             autocomplete="off" />
+      <input type="text" class="field-input" id="onbGistId"
+             placeholder="Gist ID (32 碼英數字)"
+             autocomplete="off" />
+      <div class="onb-webdav-actions">
+        <button class="settings-btn ghost" id="onbGistTest">測試連線</button>
+        <button class="settings-btn" id="onbGistConnect">連線並載入</button>
+      </div>
+      <p class="onb-webdav-status" id="onbGistStatus"></p>
+    </div>
+
+    <button class="onb-btn" id="onbBtnWebdav">
+      <span class="icon">🌐</span>
+      <span class="label">連接 Synology / WebDAV</span>
+      <span class="hint">書籤存你的 NAS · 需自行架設 WebDAV</span>
+    </button>
+
+    <!-- WebDAV inline form(點選 NAS 按鈕後展開) -->
+    <div class="onb-webdav-form" id="onbWebdavForm" style="display:none;">
+      <input type="url" class="field-input" id="onbWdUrl"
+             placeholder="https://nas.example.com/webdav/znue_bookmarks.json"
+             autocomplete="url" />
+      <input type="text" class="field-input" id="onbWdUser"
+             placeholder="帳號" autocomplete="username" />
+      <input type="password" class="field-input" id="onbWdPass"
+             placeholder="密碼" autocomplete="current-password" />
+      <div class="onb-webdav-actions">
+        <button class="settings-btn ghost" id="onbWdTest">測試連線</button>
+        <button class="settings-btn" id="onbWdConnect">連線並載入</button>
+      </div>
+      <p class="onb-webdav-status" id="onbWdStatus"></p>
+    </div>
+
+    <div class="onb-divider"><span>另外(可選)</span></div>
+
+    <button class="onb-btn slim" id="onbBtnHealth">
+      <span class="icon">🩺</span>
+      <span class="label">連結 health-ledger.json</span>
+      <span class="hint">沒選也行 · 之後可在設定加</span>
+    </button>
+
+    <button class="onb-skip" id="onbBtnSkip">
+      <strong>略過</strong> · 此瀏覽器不支援檔案存儲(常見於手機)<br>
+      可進入主頁瀏覽範例,但<strong>改動不會被儲存</strong>。
+    </button>
+
+    <p class="onb-foot">
+      <strong style="font-style:normal; color:var(--ink-soft);">GitHub Gist 模式</strong> 任何裝置任何瀏覽器 · 一個連結搞定 · 需 GitHub 帳號。<br>
+      <strong style="font-style:normal; color:var(--ink-soft);">本機檔案模式</strong> 需 Chrome / Edge / Brave 桌面版(File System Access API)。<br>
+      <strong style="font-style:normal; color:var(--ink-soft);">瀏覽器儲存模式</strong> 任何瀏覽器皆可 · Safari / Firefox / 手機自動啟用。<br>
+      Token 僅存在你自己的瀏覽器 IndexedDB，不經過任何中介伺服器。
+    </p>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal" id="settingsModal">
+  <div class="modal-head">
+    <h2>設定</h2>
+    <span class="modal-sub">settings</span>
+    <button class="close-btn" id="settingsClose">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="settings-section">
+      <h3 class="settings-h3">資料檔案</h3>
+      <!-- 儲存模式 row -->
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">儲存模式</div>
+          <div class="settings-row-val" id="settingsStorageMode">本機檔案 (FSA)</div>
+        </div>
+        <div class="settings-row-actions">
+          <button class="settings-btn ghost" id="settingsGistDisconnect" style="display:none;">斷開 Gist</button>
+          <button class="settings-btn ghost" id="settingsGistReconfig" style="display:none;">重新設定</button>
+          <button class="settings-btn ghost" id="settingsWebdavDisconnect" style="display:none;">斷開 NAS</button>
+          <button class="settings-btn ghost" id="settingsWebdavReconfig" style="display:none;">重新設定</button>
+        </div>
+      </div>
+      <!-- FSA bookmarks row(WebDAV 模式時隱藏) -->
+      <div class="settings-row" id="settingsFsaRow">
+        <div class="settings-row-info">
+          <div class="settings-row-label">bookmarks.json</div>
+          <div class="settings-row-val" id="settingsBookmarksName">(未連結)</div>
+        </div>
+        <div class="settings-row-actions">
+          <button class="settings-btn" id="settingsSwapBookmarks">換檔案</button>
+          <button class="settings-btn ghost" id="settingsClearBookmarks">清除連結</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">health-ledger.json</div>
+          <div class="settings-row-val" id="settingsHealthName">(未連結)</div>
+        </div>
+        <div class="settings-row-actions">
+          <button class="settings-btn" id="settingsSwapHealth">換 / 連結</button>
+          <button class="settings-btn ghost" id="settingsClearHealth">清除</button>
+        </div>
+      </div>
+      <div class="settings-row settings-row-toggle">
+        <div class="settings-row-info">
+          <div class="settings-row-label">啟用健康狀態列</div>
+          <div class="settings-row-val">沒連結 ledger 時自動隱藏</div>
+        </div>
+        <div class="settings-row-actions">
+          <div class="toggle-switch on" id="settingsHealthBarToggle"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-h3">預設卡片內容模式</h3>
+      <div class="size-picker" id="settingsDefaultContentMode">
+        <div class="size-option" data-mode="list">
+          <div class="so-name">list</div><div class="so-hint">條列文字連結</div>
+        </div>
+        <div class="size-option" data-mode="grid">
+          <div class="so-name">grid</div><div class="so-hint">圖示排列</div>
+        </div>
+      </div>
+      <div class="settings-hint">
+        卡片設為「auto」模式時,會用這個預設值決定顯示成 list 還是 grid。
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-h3">連結排序</h3>
+      <div class="size-picker" id="settingsSortMode">
+        <div class="size-option" data-sort="manual">
+          <div class="so-name">手動</div><div class="so-hint">拖曳指定</div>
+        </div>
+        <div class="size-option" data-sort="clicks">
+          <div class="so-name">點擊次數</div><div class="so-hint">最常用優先</div>
+        </div>
+        <div class="size-option" data-sort="recent">
+          <div class="so-name">最近用</div><div class="so-hint">新鮮的優先</div>
+        </div>
+      </div>
+      <div class="settings-hint">
+        套用範圍:卡片 panel 內的連結列表、自動填補的 quickLinks(fallback)。<br>
+        非「手動」時,連結拖曳排序會被禁用(切回手動才可拖)。已顯式釘為快捷的連結保留指定順序。
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-h3">健康頁完整紀錄連結</h3>
+      <input type="text" class="field-input" id="settingsHealthUrl" placeholder="../health_pwa/index.html 或 file:///D:/.../index.html">
+      <div class="settings-hint">
+        健康面板「完整紀錄 →」按鈕會跳到這個位置。可填相對路徑、絕對 file:// 路徑、或 https URL。
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-h3">備份</h3>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-val">手動匯出 / 匯入(災難恢復用)</div>
+        </div>
+        <div class="settings-row-actions">
+          <button class="settings-btn" id="settingsExport">匯出 JSON</button>
+          <button class="settings-btn" id="settingsImport">從 JSON 匯入</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section" id="settingsAppSection" style="display:none;">
+      <h3 class="settings-h3">應用程式</h3>
+      <div class="settings-row settings-row-toggle">
+        <div class="settings-row-info">
+          <div class="settings-row-label">安裝為應用程式</div>
+          <div class="settings-row-val">桌面/手機獨立 icon · 無瀏覽器外框</div>
+        </div>
+        <div class="settings-row-actions">
+          <button class="settings-btn" id="settingsInstallPWA">安裝</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-h3">關於</h3>
+      <div class="settings-hint" style="margin-top:0; font-style:normal; font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); line-height:1.7;">
+        znue_home · 個人化起始頁<br>
+        資料完全本機,不送雲端 · <a href="README.md" target="_blank" style="color:var(--accent); text-decoration:underline;">README</a><br>
+        快捷鍵:<code style="font-family:var(--mono); background:var(--bg-2); padding:0 4px; border-radius:2px;">/</code> 搜尋 · <code style="font-family:var(--mono); background:var(--bg-2); padding:0 4px; border-radius:2px;">E</code> 編輯 · <code style="font-family:var(--mono); background:var(--bg-2); padding:0 4px; border-radius:2px;">Esc</code> 關閉
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 第三方:SortableJS(拖曳排序) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<!-- JS 模組 - 載入順序 = 依賴順序 -->
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/markdown.js"></script>
+<script src="js/webdav.js"></script>
+<script src="js/gist.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/search.js"></script>
+<script src="js/health.js"></script>
+<script src="js/render.js"></script>
+<script src="js/editing.js"></script>
+<script src="js/archive.js"></script>
+<script src="js/dnd.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
