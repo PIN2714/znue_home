@@ -965,9 +965,10 @@ function handleImportJSON(){
       applySettingsToUi();
       renderSections();
       renderHealthBar();
-      markDirty();
       closeSettings();
-      showTip('已匯入(已寫入連結的 bookmarks.json)');
+      showTip('匯入中，正在儲存…');
+      await flushDirty(); // 立即強制寫入，不用 debounce
+      showTip('已匯入並儲存完成');
     } catch (e) {
       showTip('匯入失敗:' + (e.message || e));
     }
