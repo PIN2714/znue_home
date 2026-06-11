@@ -51,6 +51,8 @@ let _webdavEtag = '';
 let _gistCreds = null;
 // 最近一次 GET 的 ETag(304 快速路徑用)
 let _gistEtag = '';
+// 最近一次檔案的 SHA(Contents API 更新時需要)
+let _gistSha = '';
 
 // ─── 跨分頁同步(BroadcastChannel) ────────────────────────────────────────────
 let _bc = null;
@@ -489,17 +491,19 @@ async function _gistLoadBookmarks(){
       return;
     }
     if (!result.exists){
-      // Gist 裡還沒有書籤檔 → 用目前 DATA 建立
+      // 還沒有書籤檔 → 用目前 DATA 建立
       ensureDataShape();
       const content = JSON.stringify(buildBookmarksJSON(), null, 2);
-      const putResult = await gistPut(_gistCreds.gistId, _gistCreds.token, content);
+      const putResult = await gistPut(_gistCreds.gistId, _gistCreds.token, content, '', '');
       _gistEtag = putResult.etag || '';
+      _gistSha  = putResult.sha  || '';
       await saveBookmarksCache(content, _gistEtag);
       return;
     }
     const data = JSON.parse(result.content);
     applyLoadedBookmarks(data);
     _gistEtag = result.etag || '';
+    _gistSha  = result.sha  || '';
     await saveBookmarksCache(result.content, _gistEtag);
   } catch(e){
     const isNetErr = e.name === 'AbortError' || e.name === 'TypeError' || !navigator.onLine;
@@ -525,8 +529,9 @@ async function _gistSaveBookmarks(){
   try {
     const content = JSON.stringify(buildBookmarksJSON(), null, 2);
     await saveBookmarksCache(content, _gistEtag);
-    const result = await gistPut(_gistCreds.gistId, _gistCreds.token, content);
+    const result = await gistPut(_gistCreds.gistId, _gistCreds.token, content, '', _gistSha);
     _gistEtag = result.etag || '';
+    _gistSha  = result.sha  || '';
     if (typeof updateLastSavedDisplay === 'function') updateLastSavedDisplay();
   } catch(e){
     if (e.name === 'AbortError' || e.name === 'TypeError' || !navigator.onLine){
@@ -555,6 +560,7 @@ async function handleGistDisconnect(){
   storageMode = 'none';
   _gistCreds = null;
   _gistEtag = '';
+  _gistSha  = '';
   await clearGistConfig();
   await clearBookmarksCache();
   closeSettings();

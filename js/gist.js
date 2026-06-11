@@ -1,22 +1,24 @@
 /* gist.js
-   GitHub Gist 作為書籤後端 — 跨裝置同步的核心模組
-   - 用 Personal Access Token (gist scope only) 讀寫 Gist
-   - ETag-based 條件請求，避免不必要的 API 消耗
-   - 離線時 fallback IDB 快取，重連後自動同步
-   API 文件: https://docs.github.com/en/rest/gists/gists */
+   GitHub Contents API — 把書籤存在 repo 裡的檔案
+   用 Personal Access Token (repo scope) 讀寫
+   無檔案大小限制，支援 SHA-based 衝突偵測
+   API 文件: https://docs.github.com/en/rest/repos/contents */
 
 'use strict';
 
-const GIST_API = 'https://api.github.com/gists';
-const GIST_TIMEOUT_MS = 10000;
+const GIST_API = 'https://api.github.com';
+const GIST_TIMEOUT_MS = 15000;
 const GIST_FILENAME = 'znue_bookmarks.json';
+// repo 固定是 PIN2714/znue_home，書籤存在 data/ 子目錄避免跟程式碼混在一起
+const GIST_REPO = 'PIN2714/znue_home';
+const GIST_FILE_PATH = `data/${GIST_FILENAME}`;
 
 /* ── 共用 fetch 包裝 ──────────────────────────────────────────────────────── */
-async function _gistFetch(url, opts = {}, token){
+async function _gistFetch(path, opts = {}, token){
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), GIST_TIMEOUT_MS);
   try {
-    const resp = await fetch(url, {
+    const resp = await fetch(`${GIST_API}${path}`, {
       ...opts,
       signal: ctrl.signal,
       headers: {
@@ -32,19 +34,18 @@ async function _gistFetch(url, opts = {}, token){
   }
 }
 
-/* ── 測試 Token + Gist 是否可存取 ─────────────────────────────────────────── */
-/* 回傳 { ok, exists, error } */
+/* ── 測試 Token 是否可存取 repo ───────────────────────────────────────────── */
 async function gistTest(gistId, token){
+  // gistId 參數保留相容性，實際不使用（固定存在 repo）
   try {
-    const resp = await _gistFetch(`${GIST_API}/${gistId}`, {}, token);
-    if (resp.status === 200){
-      const json = await resp.json();
-      const exists = GIST_FILENAME in (json.files || {});
-      return { ok: true, exists };
-    }
-    if (resp.status === 401) return { ok: false, error: 'Token 無效或無 gist 權限' };
-    if (resp.status === 403) return { ok: false, error: 'Token 權限不足' };
-    if (resp.status === 404) return { ok: false, error: 'Gist ID 不存在，或 Token 無法存取此 Gist' };
+    const resp = await _gistFetch(
+      `/repos/${GIST_REPO}/contents/${GIST_FILE_PATH}`,
+      {}, token
+    );
+    if (resp.status === 200) return { ok: true, exists: true };
+    if (resp.status === 404) return { ok: true, exists: false }; // repo 有權限但檔案還不存在
+    if (resp.status === 401) return { ok: false, error: 'Token 無效或無 repo 權限' };
+    if (resp.status === 403) return { ok: false, error: 'Token 權限不足，需要 repo scope' };
     return { ok: false, error: `HTTP ${resp.status}` };
   } catch(e){
     if (e.name === 'AbortError') return { ok: false, error: '連線逾時' };
@@ -52,98 +53,73 @@ async function gistTest(gistId, token){
   }
 }
 
-/* ── 讀取 Gist 內容 ────────────────────────────────────────────────────────── */
+/* ── 讀取書籤檔內容 ────────────────────────────────────────────────────────── */
 /* 回傳 { content, etag, exists } 或拋出 Error */
 async function gistGet(gistId, token, knownEtag = ''){
   const headers = {};
   if (knownEtag) headers['If-None-Match'] = knownEtag;
 
-  const resp = await _gistFetch(`${GIST_API}/${gistId}`, { headers }, token);
+  const resp = await _gistFetch(
+    `/repos/${GIST_REPO}/contents/${GIST_FILE_PATH}`,
+    { headers }, token
+  );
 
-  if (resp.status === 304){
-    // 未改變，caller 自行使用快取
-    return { notModified: true, etag: knownEtag };
-  }
-  if (resp.status === 404){
-    return { exists: false, etag: '', content: null };
-  }
+  if (resp.status === 304) return { notModified: true, etag: knownEtag };
+  if (resp.status === 404) return { exists: false, etag: '', content: null, sha: '' };
   if (!resp.ok){
     const body = await resp.text().catch(() => '');
-    throw new Error(`Gist GET 失敗: HTTP ${resp.status} ${body.slice(0,120)}`);
+    throw new Error(`讀取失敗: HTTP ${resp.status} ${body.slice(0,120)}`);
   }
 
-  const json = await resp.json();
   const etag = resp.headers.get('ETag') || '';
-  const fileObj = json.files?.[GIST_FILENAME];
+  const json = await resp.json();
 
-  if (!fileObj){
-    // Gist 存在但裡面還沒有書籤檔案
-    return { exists: false, etag, content: null };
-  }
+  // GitHub Contents API 回傳 base64 編碼內容
+  const content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
+  const sha = json.sha || '';
 
-  // 小檔案直接在 files 裡；大檔案要用 raw_url 再拉一次
-  let content = fileObj.content;
-  if (fileObj.truncated && fileObj.raw_url){
-    const raw = await fetch(fileObj.raw_url, { signal: AbortSignal.timeout(GIST_TIMEOUT_MS) });
-    if (!raw.ok) throw new Error('Gist raw content 讀取失敗');
-    content = await raw.text();
-  }
-
-  return { exists: true, content, etag };
+  return { exists: true, content, etag, sha };
 }
 
-/* ── 寫入 / 更新 Gist 內容 ─────────────────────────────────────────────────── */
-/* 回傳 { etag } 或拋出 Error */
-async function gistPut(gistId, token, content){
+/* ── 寫入書籤檔 ─────────────────────────────────────────────────────────────── */
+/* 回傳 { etag, sha } 或拋出 Error */
+async function gistPut(gistId, token, content, _unused, sha = ''){
+  // 內容轉 base64
+  const encoded = btoa(unescape(encodeURIComponent(content)));
+
   const body = JSON.stringify({
-    files: {
-      [GIST_FILENAME]: { content }
-    }
+    message: 'update bookmarks',
+    content: encoded,
+    ...(sha ? { sha } : {}), // 有 sha 才帶（更新），沒有就是新建
   });
 
-  const resp = await _gistFetch(`${GIST_API}/${gistId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body,
-  }, token);
+  const resp = await _gistFetch(
+    `/repos/${GIST_REPO}/contents/${GIST_FILE_PATH}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    }, token
+  );
 
   if (!resp.ok){
     const errBody = await resp.text().catch(() => '');
     if (resp.status === 401) throw new Error('Token 無效，請重新設定');
-    if (resp.status === 403) throw new Error('Token 無 gist 寫入權限');
-    if (resp.status === 404) throw new Error('找不到 Gist，請確認 Gist ID');
-    if (resp.status === 422) throw new Error('Gist 內容格式錯誤');
-    throw new Error(`Gist PUT 失敗: HTTP ${resp.status} ${errBody.slice(0,120)}`);
+    if (resp.status === 403) throw new Error('Token 無 repo 寫入權限');
+    if (resp.status === 404) throw new Error('找不到 repo，請確認設定');
+    if (resp.status === 409) throw new Error('衝突：遠端有更新，請重新整理後再試');
+    if (resp.status === 422) throw new Error('SHA 不符，請重新整理頁面');
+    throw new Error(`寫入失敗: HTTP ${resp.status} ${errBody.slice(0,120)}`);
   }
 
   const json = await resp.json();
   const etag = resp.headers.get('ETag') || '';
-  return { etag };
+  const newSha = json.content?.sha || '';
+  return { etag, sha: newSha };
 }
 
-/* ── 建立新 Gist（首次使用，如果使用者提供的 Gist ID 是空的） ─────────────── */
-/* 回傳 { gistId, etag } */
+/* ── 相容舊介面：gistCreate 不再需要，但保留避免 storage.js 呼叫出錯 ──────── */
 async function gistCreate(token, content){
-  const body = JSON.stringify({
-    description: 'znue_home bookmarks',
-    public: false,
-    files: {
-      [GIST_FILENAME]: { content }
-    }
-  });
-
-  const resp = await _gistFetch(GIST_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body,
-  }, token);
-
-  if (!resp.ok){
-    const errBody = await resp.text().catch(() => '');
-    throw new Error(`建立 Gist 失敗: HTTP ${resp.status} ${errBody.slice(0,120)}`);
-  }
-
-  const json = await resp.json();
-  const etag = resp.headers.get('ETag') || '';
-  return { gistId: json.id, etag };
+  const result = await gistPut('', token, content, '', '');
+  return { gistId: GIST_REPO, etag: result.etag };
 }
