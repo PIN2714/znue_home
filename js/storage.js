@@ -47,7 +47,7 @@ let _webdavCreds = null;
 let _webdavEtag = '';
 
 // ─── GitHub Gist 相關 ────────────────────────────────────────────────────────
-// { gistId, token }(gist 模式時有值)
+// { gistId, token, password }(gist 模式時有值)
 let _gistCreds = null;
 // 最近一次 GET 的 ETag(304 快速路徑用)
 let _gistEtag = '';
@@ -480,7 +480,8 @@ window.addEventListener('online', _webdavOnlineSync);
 async function _gistLoadBookmarks(){
   if (!_gistCreds) throw new Error('Gist 設定遺失');
   try {
-    const result = await gistGet(_gistCreds.gistId, _gistCreds.token, _gistEtag);
+    const pw = _gistCreds.password || '';
+    const result = await gistGet(_gistCreds.gistId, _gistCreds.token, _gistEtag, pw);
     if (result.notModified){
       // 304 — 內容沒變,用快取即可
       const cached = await loadBookmarksCache();
@@ -494,7 +495,7 @@ async function _gistLoadBookmarks(){
       // 還沒有書籤檔 → 用目前 DATA 建立
       ensureDataShape();
       const content = JSON.stringify(buildBookmarksJSON(), null, 2);
-      const putResult = await gistPut(_gistCreds.gistId, _gistCreds.token, content, '', '');
+      const putResult = await gistPut(_gistCreds.gistId, _gistCreds.token, content, '', '', pw);
       _gistEtag = putResult.etag || '';
       _gistSha  = putResult.sha  || '';
       await saveBookmarksCache(content, _gistEtag);
@@ -529,7 +530,8 @@ async function _gistSaveBookmarks(){
   try {
     const content = JSON.stringify(buildBookmarksJSON(), null, 2);
     await saveBookmarksCache(content, _gistEtag);
-    const result = await gistPut(_gistCreds.gistId, _gistCreds.token, content, '', _gistSha);
+    const pw = _gistCreds.password || '';
+    const result = await gistPut(_gistCreds.gistId, _gistCreds.token, content, '', _gistSha, pw);
     _gistEtag = result.etag || '';
     _gistSha  = result.sha  || '';
     if (typeof updateLastSavedDisplay === 'function') updateLastSavedDisplay();
@@ -546,8 +548,8 @@ async function _gistSaveBookmarks(){
 }
 
 /* 連線 Gist:onboarding 用 */
-async function handleGistConnect(gistId, token){
-  _gistCreds = { gistId: gistId.trim(), token: token.trim() };
+async function handleGistConnect(gistId, token, password){
+  _gistCreds = { gistId: gistId.trim(), token: token.trim(), password: password || '' };
   storageMode = 'gist';
   await saveGistConfig(_gistCreds);
   await _gistLoadBookmarks();
@@ -1267,14 +1269,16 @@ function bindStorageDom(){
     }
   });
   $('#onbGistConnect')?.addEventListener('click', async () => {
-    const token  = $('#onbGistToken')?.value?.trim();
-    const gistId = $('#onbGistId')?.value?.trim();
+    const token    = $('#onbGistToken')?.value?.trim();
+    const gistId   = $('#onbGistId')?.value?.trim();
+    const password = $('#onbGistPassword')?.value || '';
     const statusEl = $('#onbGistStatus');
     if (!token){ if(statusEl){ statusEl.textContent = '請輸入 Personal Access Token'; statusEl.className = 'onb-webdav-status err'; } return; }
     if (!gistId){ if(statusEl){ statusEl.textContent = '請輸入 Gist ID'; statusEl.className = 'onb-webdav-status err'; } return; }
+    if (!password){ if(statusEl){ statusEl.textContent = '請輸入加密密碼（用於保護書籤資料）'; statusEl.className = 'onb-webdav-status err'; } return; }
     if (statusEl){ statusEl.textContent = '連線中…'; statusEl.className = 'onb-webdav-status'; }
     try {
-      await handleGistConnect(gistId, token);
+      await handleGistConnect(gistId, token, password);
     } catch(e){
       if (statusEl){ statusEl.textContent = '✗ ' + (e.message || e); statusEl.className = 'onb-webdav-status err'; }
     }

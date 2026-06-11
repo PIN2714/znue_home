@@ -55,7 +55,7 @@ async function gistTest(gistId, token){
 
 /* ── 讀取書籤檔內容 ────────────────────────────────────────────────────────── */
 /* 回傳 { content, etag, exists } 或拋出 Error */
-async function gistGet(gistId, token, knownEtag = ''){
+async function gistGet(gistId, token, knownEtag = '', password = ''){
   const headers = {};
   if (knownEtag) headers['If-None-Match'] = knownEtag;
 
@@ -75,17 +75,33 @@ async function gistGet(gistId, token, knownEtag = ''){
   const json = await resp.json();
 
   // GitHub Contents API 回傳 base64 編碼內容
-  const content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
+  const raw = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
   const sha = json.sha || '';
+
+  // 若有密碼則解密，否則直接用（相容舊資料）
+  let content;
+  if (password){
+    try {
+      content = await cryptoDecrypt(raw, password);
+    } catch(_){
+      // 可能是舊的未加密資料，直接用
+      content = raw;
+    }
+  } else {
+    content = raw;
+  }
 
   return { exists: true, content, etag, sha };
 }
 
 /* ── 寫入書籤檔 ─────────────────────────────────────────────────────────────── */
 /* 回傳 { etag, sha } 或拋出 Error */
-async function gistPut(gistId, token, content, _unused, sha = ''){
+async function gistPut(gistId, token, content, _unused, sha = '', password = ''){
+  // 若有密碼則加密
+  const plainOrEncrypted = password ? await cryptoEncrypt(content, password) : content;
+
   // 內容轉 base64
-  const encoded = btoa(unescape(encodeURIComponent(content)));
+  const encoded = btoa(unescape(encodeURIComponent(plainOrEncrypted)));
 
   const body = JSON.stringify({
     message: 'update bookmarks',

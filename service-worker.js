@@ -5,7 +5,7 @@
    - GET 請求 cache-first;cache miss 時 fetch + 動態加入快取
    - 升級新版本時:install 階段 skipWaiting + activate 清舊 caches + claim clients */
 
-const CACHE_VERSION = 'znue-home-v12'; // 新增 GitHub Gist 同步模式
+const CACHE_VERSION = 'znue-home-v13'; // 加入 AES-256 加密保護書籤資料
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const STATIC_RESOURCES = [
@@ -25,6 +25,7 @@ const STATIC_RESOURCES = [
   './js/markdown.js',
   './js/webdav.js',
   './js/gist.js',
+  './js/crypto.js',
   './js/storage.js',
   './js/theme.js',
   './js/search.js',

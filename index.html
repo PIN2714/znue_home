@@ -230,11 +230,15 @@
     <!-- GitHub Gist inline form -->
     <div class="onb-webdav-form" id="onbGistForm" style="display:none;">
       <input type="password" class="field-input" id="onbGistToken"
-             placeholder="Personal Access Token (gist scope)"
+             placeholder="Personal Access Token (repo scope)"
              autocomplete="off" />
       <input type="text" class="field-input" id="onbGistId"
-             placeholder="Gist ID (32 碼英數字)"
-             autocomplete="off" />
+             placeholder="Repo 路徑（固定：PIN2714/znue_home）"
+             value="PIN2714/znue_home" readonly
+             autocomplete="off" style="color:var(--ink-faint);" />
+      <input type="password" class="field-input" id="onbGistPassword"
+             placeholder="加密密碼（自訂，用於保護書籤內容）"
+             autocomplete="new-password" />
       <div class="onb-webdav-actions">
         <button class="settings-btn ghost" id="onbGistTest">測試連線</button>
         <button class="settings-btn" id="onbGistConnect">連線並載入</button>
@@ -430,6 +434,7 @@
 <script src="js/markdown.js"></script>
 <script src="js/webdav.js"></script>
 <script src="js/gist.js"></script>
+<script src="js/crypto.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/search.js"></script>
